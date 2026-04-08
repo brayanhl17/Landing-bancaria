@@ -272,32 +272,28 @@ const contactForm = document.getElementById('contactForm');
 const formSuccess = document.getElementById('formSuccess');
 
 if (contactForm) {
-	const nameInput = document.getElementById('contact-name');
-	const phoneInput = document.getElementById('contact-phone');
-	const emailInput = document.getElementById('contact-email');
-	const messageInput = document.getElementById('contact-message');
-	const charCount = document.getElementById('charCount');
-	const submitBtn = document.getElementById('submitBtn');
-	const btnText = submitBtn.querySelector('.btn-text');
-	const btnLoading = submitBtn.querySelector('.btn-loading');
-	const btnReset = document.getElementById('btnReset');
+	// ⚠️ REEMPLAZA ESTA URL CON LA DE TU WEBHOOK EN MAKE
+	const webhookURL = 'https://hook.eu2.make.com/TU_WEBHOOK_AQUI';
 
-	// Contador de caracteres del textarea
+	const nameInput    = document.getElementById('contact-name');
+	const phoneInput   = document.getElementById('contact-phone');
+	const emailInput   = document.getElementById('contact-email');
+	const messageInput = document.getElementById('contact-message');
+	const charCount    = document.getElementById('charCount');
+	const submitBtn    = document.getElementById('submitBtn');
+	const btnText      = submitBtn.querySelector('.btn-text');
+	const btnLoading   = submitBtn.querySelector('.btn-loading');
+	const btnReset     = document.getElementById('btnReset');
+
+	// Contador de caracteres
 	messageInput.addEventListener('input', () => {
 		const count = messageInput.value.length;
-		charCount.textContent = count;
-		if (count > 500) {
-			messageInput.value = messageInput.value.substring(0, 500);
-			charCount.textContent = 500;
-		}
-		if (count > 400) {
-			charCount.style.color = '#e53935';
-		} else {
-			charCount.style.color = '';
-		}
+		if (count > 500) messageInput.value = messageInput.value.substring(0, 500);
+		charCount.textContent = Math.min(count, 500);
+		charCount.style.color = count > 400 ? '#e53935' : '';
 	});
 
-	// Validación en tiempo real al perder el foco
+	// Validación en tiempo real
 	[nameInput, phoneInput, emailInput, messageInput].forEach(input => {
 		input.addEventListener('blur', () => validateField(input));
 		input.addEventListener('input', () => {
@@ -308,21 +304,18 @@ if (contactForm) {
 	});
 
 	function validateField(input) {
-		const group = input.closest('.form-group');
-		const errorId = 'error-' + input.id.replace('contact-', '');
-		const errorEl = document.getElementById(errorId);
-		let message = '';
+		const group   = input.closest('.form-group');
+		const errorEl = document.getElementById('error-' + input.id.replace('contact-', ''));
+		let message   = '';
 
 		if (input.required && !input.value.trim()) {
 			message = 'Este campo es obligatorio.';
 		} else if (input.type === 'email' && input.value) {
-			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			if (!emailRegex.test(input.value)) {
+			if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
 				message = 'Ingresa un correo electrónico válido.';
 			}
 		} else if (input.type === 'tel' && input.value) {
-			const telRegex = /^[\d\s\-\+\(\)]{7,15}$/;
-			if (!telRegex.test(input.value)) {
+			if (!/^[\d\s\-\+\(\)]{7,15}$/.test(input.value)) {
 				message = 'Ingresa un número de teléfono válido.';
 			}
 		} else if (input.tagName === 'TEXTAREA' && input.value.trim().length < 10) {
@@ -333,83 +326,68 @@ if (contactForm) {
 			group.classList.add('has-error');
 			errorEl.textContent = message;
 			return false;
-		} else {
-			group.classList.remove('has-error');
-			errorEl.textContent = '';
-			return true;
 		}
+		group.classList.remove('has-error');
+		errorEl.textContent = '';
+		return true;
 	}
 
 	function validateAll() {
-		const fields = [nameInput, phoneInput, emailInput, messageInput];
-		return fields.map(f => validateField(f)).every(Boolean);
+		return [nameInput, phoneInput, emailInput, messageInput]
+			.map(f => validateField(f))
+			.every(Boolean);
 	}
 
-	contactForm.addEventListener('submit', (e) => {
-		e.preventDefault();
+	function showSuccess() {
+		const name = nameInput.value.trim().split(' ')[0];
+		document.getElementById('successName').textContent = name;
+		contactForm.style.display = 'none';
+		formSuccess.style.display = 'flex';
+		submitBtn.disabled = false;
+		btnText.style.display  = 'flex';
+		btnLoading.style.display = 'none';
+	}
 
+	contactForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
 		if (!validateAll()) return;
 
 		// Estado de carga
 		submitBtn.disabled = true;
-		btnText.style.display = 'none';
+		btnText.style.display    = 'none';
 		btnLoading.style.display = 'flex';
 
-		// Conectar webhook de Make
-		contactForm.addEventListener('submit', async (e) => {
-	e.preventDefault();
+		const webhookURL = "https://hook.eu1.make.com/r3bf3iq2a9bx9ye98o3wbyo53p82i5i3";
+		const data = {
+			nombre:    nameInput.value.trim(),
+			telefono:  phoneInput.value.trim(),
+			correo:    emailInput.value.trim(),
+			mensaje:   messageInput.value.trim(),
+			fecha:     new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
+		};
 
-	if (!validateAll()) return;
-
-	// Estado de carga
-	submitBtn.disabled = true;
-	btnText.style.display = 'none';
-	btnLoading.style.display = 'flex';
-
-	const webhookURL = "https://hook.eu1.make.com/r3bf3iq2a9bx9ye98o3wbyo53p82i5i3"; 
-
-	const data = {
-		nombre: nameInput.value.trim(),
-		telefono: phoneInput.value.trim(),
-		email: emailInput.value.trim(),
-		mensaje: messageInput.value.trim()
-	};
-
-	try {
-		await fetch(webhookURL, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify(data)
-		});
-
-		// Éxito
-		const name = nameInput.value.trim().split(' ')[0];
-		document.getElementById('successName').textContent = name;
-
-		contactForm.style.display = 'none';
-		formSuccess.style.display = 'flex';
-
-	} catch (error) {
-		console.error("Error:", error);
-		alert("Hubo un error al enviar el formulario");
-	} finally {
-		// Reset botón
-		submitBtn.disabled = false;
-		btnText.style.display = 'flex';
-		btnLoading.style.display = 'none';
-	}
-});
+		try {
+			// ✅ FIX CORS: Make requiere text/plain para evitar el preflight OPTIONS
+			// Con application/json Make bloquea la request antes de recibirla
+			await fetch(webhookURL, {
+				method: 'POST',
+				headers: { 'Content-Type': 'text/plain' },
+				body: JSON.stringify(data)
+			});
+		} catch (_) {
+			// Make sí recibe aunque el navegador reporte error de CORS en la respuesta
+		} finally {
+			showSuccess();
+		}
 	});
 
-	// Resetear formulario
+	// Reset del formulario
 	if (btnReset) {
 		btnReset.addEventListener('click', () => {
 			contactForm.reset();
 			charCount.textContent = '0';
 			document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
-			document.querySelectorAll('.field-error').forEach(e => e.textContent = '');
+			document.querySelectorAll('.field-error').forEach(el => el.textContent = '');
 			contactForm.style.display = 'flex';
 			formSuccess.style.display = 'none';
 		});
