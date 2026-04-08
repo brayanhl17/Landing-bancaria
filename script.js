@@ -1,4 +1,3 @@
-
 const btnBars = document.querySelector('.btn-bars');
 const nav = document.querySelector('header nav');
 const body = document.body;
@@ -264,4 +263,122 @@ if (heroImage) {
 			heroImage.style.transform = `translate(-50%, ${scrolled * parallaxSpeed}px)`;
 		}
 	});
+}
+
+/* ============================================ */
+/*         FORMULARIO DE CONTACTO              */
+/* ============================================ */
+const contactForm = document.getElementById('contactForm');
+const formSuccess = document.getElementById('formSuccess');
+
+if (contactForm) {
+	const nameInput = document.getElementById('contact-name');
+	const phoneInput = document.getElementById('contact-phone');
+	const emailInput = document.getElementById('contact-email');
+	const messageInput = document.getElementById('contact-message');
+	const charCount = document.getElementById('charCount');
+	const submitBtn = document.getElementById('submitBtn');
+	const btnText = submitBtn.querySelector('.btn-text');
+	const btnLoading = submitBtn.querySelector('.btn-loading');
+	const btnReset = document.getElementById('btnReset');
+
+	// Contador de caracteres del textarea
+	messageInput.addEventListener('input', () => {
+		const count = messageInput.value.length;
+		charCount.textContent = count;
+		if (count > 500) {
+			messageInput.value = messageInput.value.substring(0, 500);
+			charCount.textContent = 500;
+		}
+		if (count > 400) {
+			charCount.style.color = '#e53935';
+		} else {
+			charCount.style.color = '';
+		}
+	});
+
+	// Validación en tiempo real al perder el foco
+	[nameInput, phoneInput, emailInput, messageInput].forEach(input => {
+		input.addEventListener('blur', () => validateField(input));
+		input.addEventListener('input', () => {
+			if (input.closest('.form-group').classList.contains('has-error')) {
+				validateField(input);
+			}
+		});
+	});
+
+	function validateField(input) {
+		const group = input.closest('.form-group');
+		const errorId = 'error-' + input.id.replace('contact-', '');
+		const errorEl = document.getElementById(errorId);
+		let message = '';
+
+		if (input.required && !input.value.trim()) {
+			message = 'Este campo es obligatorio.';
+		} else if (input.type === 'email' && input.value) {
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(input.value)) {
+				message = 'Ingresa un correo electrónico válido.';
+			}
+		} else if (input.type === 'tel' && input.value) {
+			const telRegex = /^[\d\s\-\+\(\)]{7,15}$/;
+			if (!telRegex.test(input.value)) {
+				message = 'Ingresa un número de teléfono válido.';
+			}
+		} else if (input.tagName === 'TEXTAREA' && input.value.trim().length < 10) {
+			message = 'Por favor escribe al menos 10 caracteres.';
+		}
+
+		if (message) {
+			group.classList.add('has-error');
+			errorEl.textContent = message;
+			return false;
+		} else {
+			group.classList.remove('has-error');
+			errorEl.textContent = '';
+			return true;
+		}
+	}
+
+	function validateAll() {
+		const fields = [nameInput, phoneInput, emailInput, messageInput];
+		return fields.map(f => validateField(f)).every(Boolean);
+	}
+
+	contactForm.addEventListener('submit', (e) => {
+		e.preventDefault();
+
+		if (!validateAll()) return;
+
+		// Estado de carga
+		submitBtn.disabled = true;
+		btnText.style.display = 'none';
+		btnLoading.style.display = 'flex';
+
+		// Simular envío (aquí conectarás tu webhook de Make)
+		setTimeout(() => {
+			const name = nameInput.value.trim().split(' ')[0];
+			document.getElementById('successName').textContent = name;
+
+			contactForm.style.display = 'none';
+			formSuccess.style.display = 'flex';
+
+			// Reset botón
+			submitBtn.disabled = false;
+			btnText.style.display = 'flex';
+			btnLoading.style.display = 'none';
+		}, 1800);
+	});
+
+	// Resetear formulario
+	if (btnReset) {
+		btnReset.addEventListener('click', () => {
+			contactForm.reset();
+			charCount.textContent = '0';
+			document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+			document.querySelectorAll('.field-error').forEach(e => e.textContent = '');
+			contactForm.style.display = 'flex';
+			formSuccess.style.display = 'none';
+		});
+	}
 }
