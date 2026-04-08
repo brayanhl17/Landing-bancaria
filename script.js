@@ -355,19 +355,52 @@ if (contactForm) {
 		btnText.style.display = 'none';
 		btnLoading.style.display = 'flex';
 
-		// Simular envío (aquí conectarás tu webhook de Make)
-		setTimeout(() => {
-			const name = nameInput.value.trim().split(' ')[0];
-			document.getElementById('successName').textContent = name;
+		// Conectar webhook de Make
+		contactForm.addEventListener('submit', async (e) => {
+	e.preventDefault();
 
-			contactForm.style.display = 'none';
-			formSuccess.style.display = 'flex';
+	if (!validateAll()) return;
 
-			// Reset botón
-			submitBtn.disabled = false;
-			btnText.style.display = 'flex';
-			btnLoading.style.display = 'none';
-		}, 1800);
+	// Estado de carga
+	submitBtn.disabled = true;
+	btnText.style.display = 'none';
+	btnLoading.style.display = 'flex';
+
+	const webhookURL = "https://hook.eu1.make.com/r3bf3iq2a9bx9ye98o3wbyo53p82i5i3"; 
+
+	const data = {
+		nombre: nameInput.value.trim(),
+		telefono: phoneInput.value.trim(),
+		email: emailInput.value.trim(),
+		mensaje: messageInput.value.trim()
+	};
+
+	try {
+		await fetch(webhookURL, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(data)
+		});
+
+		// Éxito
+		const name = nameInput.value.trim().split(' ')[0];
+		document.getElementById('successName').textContent = name;
+
+		contactForm.style.display = 'none';
+		formSuccess.style.display = 'flex';
+
+	} catch (error) {
+		console.error("Error:", error);
+		alert("Hubo un error al enviar el formulario");
+	} finally {
+		// Reset botón
+		submitBtn.disabled = false;
+		btnText.style.display = 'flex';
+		btnLoading.style.display = 'none';
+	}
+});
 	});
 
 	// Resetear formulario
