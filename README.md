@@ -28,8 +28,7 @@ Landing page profesional para plataforma bancaria moderna, diseñada con HTML5, 
 
 ## Capturas de Pantalla
 
-![Captura Desktop](./img/Captura1.jpg)
-![Captura Móvil](./img/Captura2.jpg)
+![Captura Desktop y Móvil](./img/Captura.PNG)
 
 ## Tecnologías
 
